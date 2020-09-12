@@ -60,8 +60,8 @@ class PageBlockController extends VoyagerBaseController
             $existingData = $block->data;
 
             if (
-                $row->partial === 'voyager::formfields.image'
-                || $row->partial === 'voyager::formfields.multiple_images'
+                $row->type === 'image'
+                || $row->type === 'multiple_images'
             ) {
                 if (is_null($request->file($row->field))) {
                     if (isset($existingData->{$row->field})) {
@@ -165,6 +165,10 @@ class PageBlockController extends VoyagerBaseController
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'type' => ['required']
+        ]);
+
         $page = Page::findOrFail($request->input('page_id'));
         $dataType = Voyager::model('DataType')->where('slug', '=', 'page-blocks')->first();
 
