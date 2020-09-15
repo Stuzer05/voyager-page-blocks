@@ -2,7 +2,6 @@
 
 namespace Pvtl\VoyagerPageBlocks;
 
-
 class MockedModel
 {
     public function __construct($datem)
@@ -19,3 +18,4 @@ class MockedModel
         return $this->id ? $this->id : '';
     }
 }
+

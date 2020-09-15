@@ -10,7 +10,7 @@ class Page extends \Pvtl\VoyagerFrontend\Page
     // Add relation to page blocks
     public function blocks()
     {
-        return $this->hasMany('Pvtl\VoyagerPageBlocks\PageBlock');
+        return $this->hasMany('Pvtl\VoyagerPageBlocks\PageBlock')->with('translations');
     }
 
     /**
@@ -43,12 +43,12 @@ class Page extends \Pvtl\VoyagerFrontend\Page
         });
 
         $array['page_blocks'] = implode(' ', Arr::flatten($pageBlocks));
-        
+
         if (isset($array['translations']) && is_array($array['translations'])) {
             //Unset translations
             unset($array['translations']);
         }
-        
+
         return $array;
     }
 }

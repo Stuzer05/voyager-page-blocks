@@ -2,12 +2,14 @@
 
 namespace Pvtl\VoyagerPageBlocks\Http\Controllers;
 
+use Exception;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Pvtl\VoyagerPageBlocks\Page;
 use Pvtl\VoyagerPageBlocks\PageBlock;
 use Pvtl\VoyagerPageBlocks\Traits\Blocks;
+use Pvtl\VoyagerPageBlocks\MockedDataModel;
 use Pvtl\VoyagerPageBlocks\Validators\BlockValidators;
 use TCG\Voyager\Facades\Voyager;
 use TCG\Voyager\Http\Controllers\VoyagerBaseController;
@@ -92,12 +94,40 @@ class PageBlockController extends VoyagerBaseController
 
         $data = $this->uploadImages($request, $data);
 
-        $block->data = $data;
-        $block->path = $block->type === 'include' ? $request->input('path') : $block->path;
-        $block->is_hidden = $request->has('is_hidden');
-        $block->is_delete_denied = $request->has('is_delete_denied');
-        $block->cache_ttl = $request->input('cache_ttl');
-        $block->save();
+        $translatable_fields = $template->fields->filter(function($field) {
+            return isset($field->translatable) && $field->translatable;
+        })->pluck('field');
+        $translations = $this->prepareTranslations($translatable_fields, $request);
+
+        $default_locale = config('voyager.multilingual.default', 'en');
+        $locales = config('voyager.multilingual.locales', [$default_locale]);
+
+        // Save translations and regular
+        foreach ($locales as $locale) {
+            if (!array_key_exists($locale, $translations)) continue;
+
+            $localized_data = $data;
+            foreach ($translations[$locale] as $field => $translation) {
+                $localized_data[$field] = $translation;
+            }
+
+            if ($locale == $default_locale) {
+                $block->data = $localized_data;
+
+                if ($block->type === 'include') {
+                    $block->controller = $request->input('controller');
+                }
+
+                $block->is_hidden = $request->has('is_hidden');
+                $block->is_delete_denied = $request->has('is_delete_denied');
+                $block->cache_ttl = $request->input('cache_ttl');
+                $block->save();
+            } else {
+                $block = $block->translate($locale);
+                $block->data = json_encode($localized_data);
+                $block->save();
+            }
+        }
 
         return redirect()
             ->to(URL::previous() . "#block-id-" . $id)
@@ -176,7 +206,13 @@ class PageBlockController extends VoyagerBaseController
             $type = $request->input('type');
             $path = '\Pvtl\VoyagerFrontend\Http\Controllers\PostController::recentBlogPosts()';
         } else {
-            list($type, $path) = explode('|', $request->input('type'));
+            [$type, $path] = explode('|', $request->input('type'));
+
+            // Check for enforced type
+            $blocks = config('page-blocks');
+            if (isset($blocks[$path]['type'])) {
+                $type = $blocks[$path]['type'];
+            }
         }
 
         $block = $page->blocks()->create([
@@ -224,5 +260,39 @@ class PageBlockController extends VoyagerBaseController
                 'message' => __('voyager::generic.successfully_deleted') . " {$dataType->display_name_singular}",
                 'alert-type' => 'success',
             ]);
+    }
+
+    public function prepareTranslations($fields, $request)
+    {
+        $translations = [];
+
+        $default_locale = config('voyager.multilingual.default', 'en');
+        $locales = config('voyager.multilingual.locales', [$default_locale]);
+
+        // $fields = !empty($request->attributes->get('breadRows')) ? array_intersect($request->attributes->get('breadRows'), $transFields) : $transFields;
+
+        foreach ($fields as $field) {
+            if (!$request->input($field.'_i18n')) {
+                throw new Exception('Invalid Translatable field'.$field);
+            }
+
+            $trans = json_decode($request->input($field.'_i18n'), true);
+
+            foreach ($trans as $lang => $translation) {
+                if (!array_key_exists($lang, $translations)) $translations[$lang] = [];
+                $translations[$lang][$field] = $translation;
+            }
+
+            // Set the default local value
+            $request->merge([$field => $trans[config('voyager.multilingual.default', 'en')]]);
+
+            // Remove field hidden input
+            unset($request[$field.'_i18n']);
+        }
+
+        // Remove language selector input
+        unset($request['i18n_selector']);
+
+        return $translations;
     }
 }

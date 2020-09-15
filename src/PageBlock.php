@@ -3,16 +3,28 @@
 namespace Pvtl\VoyagerPageBlocks;
 
 use TCG\Voyager\Models\DataRow;
+use TCG\Voyager\Traits\Translatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Database\Eloquent\Model;
 
 class PageBlock extends Model
 {
+    use Translatable;
+
+    protected $translatable = ['data'];
 
     protected $touches = [
         'page',
     ];
+
+    public static function boot() {
+        parent::boot();
+
+        static::deleted(function($model) {
+            $model->translations()->delete();
+        });
+    }
 
     /**
      * The attributes that should be mutated to dates.
@@ -69,13 +81,6 @@ class PageBlock extends Model
     // Fetch config for block template
     public function template()
     {
-        if ($this->type === 'include') {
-            return (object)[
-                'template' => $this->type,
-                'fields' => [],
-            ];
-        }
-
         $templateConfig = Config::get('page-blocks.' . $this->path);
 
         $templateConfig['fields'] = collect($templateConfig['fields'])
@@ -91,6 +96,7 @@ class PageBlock extends Model
                 $dataRow->required = $row['required'] ?? 0;
                 $dataRow->details = $row['details'] ?? null;
                 $dataRow->placeholder = $row['placeholder'] ?? 0;
+                $dataRow->translatable = $row['translatable'] ?? 0;
 
                 return $dataRow;
             });
@@ -101,6 +107,16 @@ class PageBlock extends Model
     public function getDataAttribute($value)
     {
         return json_decode($value);
+    }
+
+    public function translatedData($locale) {
+        $data = $this->translate($locale)->data;
+
+        if (is_string($data)) {
+            return $this->getDataAttribute($data);
+        } else {
+            return $data;
+        }
     }
 
     public function getCachedDataAttribute()

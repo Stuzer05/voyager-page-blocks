@@ -32,6 +32,7 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
                     'cache_ttl' => $block->cache_ttl,
                     'template' => $block->template()->template,
                     'data' => $block->cachedData,
+                    'controller' => $block->controller,
                     'path' => $block->path,
                     'type' => $block->type,
                 ];
@@ -47,6 +48,7 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
         if (empty($page->layout)) {
             $page->layout = 'default';
         }
+        
         if (!View::exists("{$this->viewPath}::layouts.{$page->layout}")) {
             $page->layout = 'default';
         }

@@ -3,26 +3,41 @@
 
     <div class="panel panel-bordered panel-info @if ($block->is_minimized == 1) panel-collapsed @endif">
         <div class="panel-heading">
-
             <h3 class="panel-title">
                 <a
-                        class="panel-action panel-collapse-icon voyager-angle-up"
-                        data-toggle="block-collapse"
-                        style="cursor:pointer"
+                    class="panel-action panel-collapse-icon voyager-angle-up"
+                    data-toggle="block-collapse"
+                    style="cursor:pointer"
                 >
-                    Developer Include
+                    Developer Include - {{ $template->name }}
+                    @if (!empty($template->description))
+                        <span class="panel-desc">{{ $template->description }}</span>
+                    @endif
                 </a>
             </h3>
             <div class="panel-actions">
+                @php
+                    $isModelTranslatable = false;
+                    foreach($template->fields as $row)
+                        if (isset($row->translatable) && $row->translatable) $isModelTranslatable = true;
+                @endphp
+                <div class="panel-action">
+                    <style>
+                        .panel-action .language-selector {
+                            float: initial !important;
+                        }
+                    </style>
+                    @include('voyager::multilingual.language-selector')
+                </div>
+
                 <a class="panel-action voyager-resize-full" data-toggle="panel-fullscreen" aria-hidden="true"></a>
             </div>
         </div>
 
         <div class="panel-body" @if ($block->is_minimized == 1) style="display:none" @endif>
-            <form role="form" action="{{ route('voyager.page-blocks.update', $block->id) }}" method="POST"
-                  enctype="multipart/form-data">
-                {{ method_field("PUT") }}
-                {{ csrf_field() }}
+            <form role="form" action="{{ route('voyager.page-blocks.update', $block->id) }}" method="POST" enctype="multipart/form-data">
+                {{ method_field('PUT') }}
+                @csrf
 
                 <div class="row">
                     <div class="form-group">
@@ -38,12 +53,41 @@
                             <input
                                     class="form-control"
                                     type="text"
-                                    name="path"
-                                    value="{{ $block->path }}"
+                                    name="controller"
+                                    value="{{ $block->controller }}"
                                     placeholder="Namespaced\Path\To\Controller::MethodName()"
                             >
                         </div>
                     </div>
+                </div> <!-- /.row -->
+
+                <div class="row">
+                    @foreach($template->fields as $row)
+                        @if ($row->type === 'break')</div> <!-- /.row --> <div class="row">@continue @endif
+                    @php $options = $row; @endphp
+
+                    @php
+                        //dd($row, $dataTypeContent);
+                    @endphp
+
+                    <div class="@if ($row->type === 'rich_text_box')col-md-12 @else col-md-6 @endif">
+                        <div class="form-group">
+                            <label>{{ $row->display_name }}</label>
+                            @php
+                                /* For 'multiple images' field - pass through the ID to identify the specific field */
+                                $dataTypeContent->id = $row->field;
+
+                                if ($row->translatable) {
+                                    $dataTypeContent->translatable = [$row->field];
+                                }
+
+                                $dataTypeContentMocked = new \Pvtl\VoyagerPageBlocks\MockedDataModel($row, $block->data);
+                                $dataTypeContentMocked->setTranslations($block->translations);
+                            @endphp
+                            {!! app('voyager')->formField($row, 'page_blocks', $dataTypeContentMocked) !!}
+                        </div> <!-- /.form-group -->
+                    </div> <!-- /.col -->
+                    @endforeach
                 </div> <!-- /.row -->
 
                 <div class="well" style="padding-bottom:0; margin-bottom:10px">

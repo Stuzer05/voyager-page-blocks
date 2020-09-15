@@ -244,9 +244,41 @@
 
             // Fix empty blocks submit
             $('.form-blocks').on('submit', function(e) {
-                if( !$(this).find('[name=type]').val().length ){
+                if (!$(this).find('[name=type]').val().length) {
                     e.preventDefault();
                 }
+            })
+
+            // Multilingual
+            $('.language-selector [name=i18n_selector]').on('change', function() {
+                let lang = $(this).attr('id');
+                let block = $(this).closest('.dd-item');
+
+                block.find('[data-i18n]').each(function() {
+                    let field = $(this).attr('name').replace('_i18n', '');
+                    let data = JSON.parse($(this).val());
+
+                    if (typeof data[lang] === 'undefined') return;
+
+                    // @todo other html inputs
+                    block.find('[name=' + field + ']').val(data[lang]);
+                })
+            })
+
+            $('[data-i18n]').each(function() {
+                let field = $(this).attr('name').replace('_i18n', '');
+                let data = JSON.parse($(this).val());
+                let trans_el = $(this);
+
+                // @todo other html inputs
+                $(this).closest('.form-group').find('input').on('keyup', function() {
+                    let lang = $(this).closest('.dd-item').find('.language-selector [name=i18n_selector]:checked').attr('id');
+
+                    // @todo other html inputs
+                    data[lang] = $(this).val();
+
+                    trans_el.val(JSON.stringify(data));
+                });
             })
         });
     </script>

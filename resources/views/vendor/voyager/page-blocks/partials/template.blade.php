@@ -16,6 +16,20 @@
                 </a>
             </h3>
             <div class="panel-actions">
+                @php
+                    $isModelTranslatable = false;
+                    foreach($template->fields as $row)
+                        if (isset($row->translatable) && $row->translatable) $isModelTranslatable = true;
+                @endphp
+                <div class="panel-action">
+                    <style>
+                        .panel-action .language-selector {
+                            float: initial !important;
+                        }
+                    </style>
+                    @include('voyager::multilingual.language-selector')
+                </div>
+
                 <a class="panel-action voyager-resize-full" data-toggle="panel-fullscreen" aria-hidden="true"></a>
             </div>
         </div>
@@ -36,8 +50,15 @@
                                 @php
                                     /* For 'multiple images' field - pass through the ID to identify the specific field */
                                     $dataTypeContent->id = $row->field;
+
+                                    if ($row->translatable) {
+                                        $dataTypeContent->translatable = [$row->field];
+                                    }
+
+                                    $dataTypeContentMocked = new \Pvtl\VoyagerPageBlocks\MockedDataModel($row, $block->data);
+                                    $dataTypeContentMocked->setTranslations($block->translations);
                                 @endphp
-                                {!! app('voyager')->formField($row, 'page_blocks', $dataTypeContent) !!}
+                                {!! app('voyager')->formField($row, 'page_blocks', $dataTypeContentMocked) !!}
                             </div> <!-- /.form-group -->
                         </div> <!-- /.col -->
                     @endforeach

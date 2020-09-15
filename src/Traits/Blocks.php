@@ -23,8 +23,8 @@ trait Blocks
     {
         return array_map(function ($block) {
             // 'Include' block types
-            if ($block->type === 'include' && !empty($block->path)) {
-                $block->html = ClassEvents::executeClass($block->path)->render();
+            if ($block->type === 'include' && !empty($block->controller)) {
+                $block->html = ClassEvents::executeClass($block->controller, $this->prepareTemplateBlockTypes($block))->render();
             }
 
             // 'Template' block types
@@ -69,11 +69,15 @@ trait Blocks
 
         // Compile each piece of content from the DB, into HTML
         foreach ($block->data as $key => $data) {
-            $block->data->$key = BladeCompiler::getHtmlFromString($data);
+            if (is_string($data)) {
+                $block->data->$key = BladeCompiler::getHtmlFromString($data);
+            } else {
+                $block->data->$key = $data;
+            }
         }
 
         // Compile the Blade View to give us HTML output
-        if (View::exists($block->template)) {
+        if ($block->type == 'template' && View::exists($block->template)) {
             $block->html = View::make($block->template, [
                 'blockData' => $block->data,
             ])->render();
