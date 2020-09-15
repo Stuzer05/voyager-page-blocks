@@ -2,6 +2,7 @@
 
 namespace Pvtl\VoyagerPageBlocks\Http\Controllers;
 
+use App;
 use Pvtl\VoyagerPageBlocks\Page;
 use Illuminate\Support\Facades\View;
 use Pvtl\VoyagerPageBlocks\Traits\Blocks;
@@ -19,24 +20,24 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
      */
     public function getPage($slug = 'home')
     {
-        $page = Page::where(['slug' => $slug, 'status' => 'ACTIVE'])->firstOrFail();
-        $blocks = $page->blocks()
-            ->where('is_hidden', '=', '0')
-            ->orderBy('order', 'asc')
-            ->get()
-            ->map(function ($block) {
-                return (object)[
-                    'id' => $block->id,
-                    'page_id' => $block->page_id,
-                    'updated_at' => $block->updated_at,
-                    'cache_ttl' => $block->cache_ttl,
-                    'template' => $block->template()->template,
-                    'data' => $block->cachedData,
-                    'controller' => $block->controller,
-                    'path' => $block->path,
-                    'type' => $block->type,
-                ];
-            });
+        $locale = App::getLocale();
+
+        $page = Page::withTranslation($locale)->where(['slug' => $slug, 'status' => 'ACTIVE'])->firstOrFail();
+        $blocks = $page->blocks()->where('is_hidden', '=', '0')->orderBy('order', 'asc')->get()->map(function($block) use ($locale) {
+            $data = $block->translatedData($locale);
+
+            return (object)[
+                'id'         => $block->id,
+                'page_id'    => $block->page_id,
+                'updated_at' => $block->updated_at,
+                'cache_ttl'  => $block->cache_ttl,
+                'template'   => $block->template()->template,
+                'data'       => $data,
+                'controller' => $block->controller,
+                'path'       => $block->path,
+                'type'       => $block->type,
+            ];
+        });
 
         // Override standard body content, with page block content
         $page['body'] = view('voyager-page-blocks::default', [
@@ -48,7 +49,7 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
         if (empty($page->layout)) {
             $page->layout = 'default';
         }
-        
+
         if (!View::exists("{$this->viewPath}::layouts.{$page->layout}")) {
             $page->layout = 'default';
         }
