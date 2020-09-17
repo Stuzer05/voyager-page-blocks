@@ -1,5 +1,10 @@
 # Voyager Page Blocks
 
+## Why fork?
+- Added translatable fields
+- "Developer" blocks can now have data for user to adit (same as "template" blocks)
+- "Developer" blocks controller receives user data as an argument (incl. Laravel's view path)
+
 ![Voyager Frontend Screenshot](/readme-intro.jpg)
 
 This [Laravel](https://laravel.com/)/[Voyager Frontend](https://github.com/pvtl/voyager-frontend) module is designed to give developers the ability to easily design page blocks, for Voyager admin users to build stunning frontend pages.
