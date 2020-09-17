@@ -97,6 +97,23 @@ $blocks['company_overview'] = [
         ],
     ],
 ];
+
+// Define "developer" block with "template" block capabilities to edit fields
+$blocks['company_overview'] = [
+    'name' => 'Company Overview',
+    'template' => 'voyager-page-blocks::blocks.company_overview',
+    'type' => 'include',
+    'fields' => [
+        'content' => [
+            'field' => 'content',
+            'display_name' => 'Company Overview Content',
+            'type' => 'text',
+            'required' => 1,
+            'placeholder' => '<p>Lorem ipsum dolor sit amet. Nullam in dui mauris.</p>',
+            'translatable' => true, // translatable field
+        ],
+    ],
+];
 ```
 
 __Step 2. Build the HTML__
