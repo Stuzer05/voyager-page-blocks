@@ -59,6 +59,7 @@
                                     $dataTypeContentMocked->setTranslations($block->translations);
                                 @endphp
                                 {!! app('voyager')->formField($row, 'page_blocks', $dataTypeContentMocked) !!}
+                                @include('voyager::multilingual.input-hidden-bread-edit-add', ['dataTypeContent' => $dataTypeContentMocked])
                             </div> <!-- /.form-group -->
                         </div> <!-- /.col -->
                     @endforeach

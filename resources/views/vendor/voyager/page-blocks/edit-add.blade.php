@@ -271,7 +271,7 @@
                 let trans_el = $(this);
 
                 // @todo other html inputs
-                $(this).closest('.form-group').find('input').on('keyup', function() {
+                $(this).closest('.form-group').find('input,textarea').on('keyup', function() {
                     let lang = $(this).closest('.dd-item').find('.language-selector [name=i18n_selector]:checked').attr('id');
 
                     // @todo other html inputs
