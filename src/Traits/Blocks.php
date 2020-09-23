@@ -61,7 +61,8 @@ trait Blocks
         $templateConfig = Config::get("page-blocks.$templateKey");
 
         // Ensure every key from config exists in collection
-        foreach ((array)$templateConfig['fields'] as $fieldName => $fieldConfig) {
+        $blockFields = $templateConfig['fields'] ?? [];
+        foreach ((array)$blockFields as $fieldName => $fieldConfig) {
             if (!isset($block->data->$fieldName)) {
                 $block->data->$fieldName = null;
             }
@@ -91,15 +92,15 @@ trait Blocks
         foreach ($request->files as $key => $field) {
             unset($data[$key]);
             if (is_array($request->file($key))) {
-                $multiImages = array();
+                $multiImages = [];
                 foreach ($request->file($key) as $key2 => $file) {
-                    $filePath = $file->store('public/blocks');
-                    $multiImages[] = str_replace('public/', '', $filePath);
+                    $filePath = $file->store('blocks');
+                    $multiImages[] = $filePath;
                 }
                 $data[$key] = json_encode($multiImages);
             } else {
-                $filePath = $request->file($key)->store('public/blocks');
-                $data[$key] = str_replace('public/', '', $filePath);
+                $filePath = $request->file($key)->store('blocks');
+                $data[$key] = $filePath;
             }
         }
         return $data;

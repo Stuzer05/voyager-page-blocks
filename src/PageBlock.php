@@ -83,6 +83,8 @@ class PageBlock extends Model
     {
         $templateConfig = Config::get('page-blocks.' . $this->path);
 
+        if (!isset($templateConfig['fields'])) $templateConfig['fields'] = [];
+
         $templateConfig['fields'] = collect($templateConfig['fields'])
             ->map(function ($row) {
                 if ($row['type'] === 'break') {

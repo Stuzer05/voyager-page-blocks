@@ -14,12 +14,13 @@ class BlockValidators
         $validationMessages = array();
 
         if ($block->type === 'include' && is_null($configFields)) {
-            $controllerMethodPath = $request->input('path');
+            $controllerMethodPath = $request->input('controller');
             $validator = Validator::make($request->all(), $validationMessages);
 
             return $validator->after(function ($validator) use ($controllerMethodPath) {
                 if (strpos($controllerMethodPath, '::') === false) {
-                    $validator->errors()->add('path', 'You must call your method statically using the "::" separator');
+                    $validator->errors()->add('controller', 'You must call your method statically using the "::" separator');
+                    return $validator;
                 }
 
                 list($controller, $method) = explode('::', $controllerMethodPath);
@@ -30,15 +31,15 @@ class BlockValidators
                 }
 
                 if (empty($method)) {
-                    $validator->errors()->add('path', "You must define a method on your included controller");
+                    $validator->errors()->add('controller', "You must define a method on your included controller");
                 }
 
                 if (!class_exists($controller)) {
-                    $validator->errors()->add('path', "Could not locate class $controller");
+                    $validator->errors()->add('controller', "Could not locate class $controller");
                 }
 
                 if (!method_exists($controller, $method)) {
-                    $validator->errors()->add('path', "Could not locate method $method in $controller");
+                    $validator->errors()->add('controller', "Could not locate method $method in $controller");
                 }
 
                 return $validator;

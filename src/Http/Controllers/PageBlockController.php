@@ -13,6 +13,7 @@ use Pvtl\VoyagerPageBlocks\MockedDataModel;
 use Pvtl\VoyagerPageBlocks\Validators\BlockValidators;
 use TCG\Voyager\Facades\Voyager;
 use TCG\Voyager\Http\Controllers\VoyagerBaseController;
+use TCG\Voyager\Models\Translation;
 
 class PageBlockController extends VoyagerBaseController
 {
@@ -54,6 +55,17 @@ class PageBlockController extends VoyagerBaseController
         $block = PageBlock::findOrFail($id);
         $template = $block->template();
         $dataType = Voyager::model('DataType')->where('slug', '=', 'page-blocks')->first();
+
+        $blockConfig = config("page-blocks.{$block->path}");
+        if (empty($blockConfig)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with([
+                    'message' => "Missing block configuration for '{$block->path}'",
+                    'alert-type' => 'error',
+                ]);
+        }
 
         // Get all block data & validate
         $data = [];
@@ -102,30 +114,76 @@ class PageBlockController extends VoyagerBaseController
         $default_locale = config('voyager.multilingual.default', 'en');
         $locales = config('voyager.multilingual.locales', [$default_locale]);
 
+        $shared_blocks = [];
+        if (isset($blockConfig['shared']) && $blockConfig['shared']) {
+            $shared_blocks = PageBlock::where('path', $block->path)->where('id', '!=', $block->getKey())->get();
+        }
+
         // Save translations and regular
-        foreach ($locales as $locale) {
-            if (!array_key_exists($locale, $translations)) continue;
+        if (!empty($translations)) {
+            foreach ($locales as $locale) {
+                if (!array_key_exists($locale, $translations)) continue;
 
-            $localized_data = $data;
-            foreach ($translations[$locale] as $field => $translation) {
-                $localized_data[$field] = $translation;
-            }
-
-            if ($locale == $default_locale) {
-                $block->data = $localized_data;
-
-                if ($block->type === 'include') {
-                    $block->controller = $request->input('controller');
+                $localized_data = $data;
+                foreach ($translations[$locale] as $field => $translation) {
+                    $localized_data[$field] = $translation;
                 }
 
-                $block->is_hidden = $request->has('is_hidden');
-                $block->is_delete_denied = $request->has('is_delete_denied');
-                $block->cache_ttl = $request->input('cache_ttl');
-                $block->save();
-            } else {
-                $block = $block->translate($locale);
-                $block->data = json_encode($localized_data);
-                $block->save();
+                if ($locale == $default_locale) {
+                    $block->data = $localized_data;
+
+                    if ($block->type === 'include') {
+                        $block->controller = $request->input('controller');
+                    }
+
+                    $block->is_hidden = $request->has('is_hidden');
+                    $block->is_delete_denied = $request->has('is_delete_denied');
+                    $block->cache_ttl = $request->input('cache_ttl');
+                    $block->save();
+
+                    if ($shared_blocks) {
+                        foreach ($shared_blocks as &$shared_block) {
+                            $shared_block->data = $block->data;
+                            $shared_block->controller = $block->controller;
+                            $shared_block->is_delete_denied = $block->is_delete_denied;
+                            $shared_block->cache_ttl = $block->cache_ttl;
+                            $shared_block->save();
+                        }
+                    }
+                } else {
+                    $block = $block->translate($locale);
+                    $block->data = json_encode($localized_data);
+                    $block->save();
+
+                    if ($shared_blocks) {
+                        foreach ($shared_blocks as &$shared_block) {
+                            $shared_block = $shared_block->translate($locale);
+                            $shared_block->data = json_encode($localized_data);
+                            $shared_block->save();
+                        }
+                    }
+                }
+            }
+        } else {
+            $block->data = [];
+
+            if ($block->type === 'include') {
+                $block->controller = $request->input('controller');
+            }
+
+            $block->is_hidden = $request->has('is_hidden');
+            $block->is_delete_denied = $request->has('is_delete_denied');
+            $block->cache_ttl = $request->input('cache_ttl');
+            $block->save();
+
+            if ($shared_blocks) {
+                foreach ($shared_blocks as &$shared_block) {
+                    $shared_block->data = $block->data;
+                    $shared_block->controller = $block->controller;
+                    $shared_block->is_delete_denied = $block->is_delete_denied;
+                    $shared_block->cache_ttl = $block->cache_ttl;
+                    $shared_block->save();
+                }
             }
         }
 
@@ -202,28 +260,56 @@ class PageBlockController extends VoyagerBaseController
         $page = Page::findOrFail($request->input('page_id'));
         $dataType = Voyager::model('DataType')->where('slug', '=', 'page-blocks')->first();
 
+        $controller = null;
+
+        $blockConfig = null;
+        $shared_block = null;
         if ($request->input('type') === 'include') {
             $type = $request->input('type');
-            $path = '\Pvtl\VoyagerFrontend\Http\Controllers\PostController::recentBlogPosts()';
+            $controller = '\Pvtl\VoyagerFrontend\Http\Controllers\PostController::recentBlogPosts()';
         } else {
             [$type, $path] = explode('|', $request->input('type'));
 
-            // Check for enforced type
             $blocks = config('page-blocks');
-            if (isset($blocks[$path]['type'])) {
-                $type = $blocks[$path]['type'];
+            if (isset($blocks[$path])) {
+                $blockConfig = $blocks[$path];
+
+                // Check for enforced type
+                if (isset($blockConfig['type'])) {
+                    $type = $blockConfig['type'];
+                }
             }
+
+            if (isset($blockConfig['shared']) && $blockConfig['shared']) {
+                $shared_block = PageBlock::where('path', $path)->with('translations')->first();
+            }
+        }
+
+        $data = $type === 'include' ? '' : $this->generatePlaceholders($request);
+        if ($shared_block) {
+            $data = $shared_block->data;
         }
 
         $block = $page->blocks()->create([
             'type' => $type,
             'path' => $path,
-            'data' => $type === 'include' ? '' : $this->generatePlaceholders($request),
+            'controller' => $controller,
+            'data' => $data,
             'order' => time(),
         ]);
 
+        if ($shared_block) {
+            foreach ($shared_block->translations as &$shared_translation) {
+                $trans_data = collect($shared_translation->toArray())->except('id');
+                $trans_data['foreign_key'] = $block->getKey();
+                
+                $translation = Translation::create($trans_data->toArray());
+                $translation->save();
+            }
+        }
+
         return redirect()
-            ->route('voyager.page-blocks.edit', array($page->id, '#block-id-' . $block->id))
+            ->route('voyager.page-blocks.edit', array($page->getKey(), '#block-id-' . $block->getKey()))
             ->with([
                 'message' => __('voyager::generic.successfully_added_new') . " {$dataType->display_name_singular}",
                 'alert-type' => 'success',
