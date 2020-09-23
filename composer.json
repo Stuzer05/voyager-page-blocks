@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "pvtl/voyager-frontend": ">=0.9"
+        "stuzer05/voyager-frontend": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5"
