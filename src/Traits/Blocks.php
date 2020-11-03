@@ -24,7 +24,7 @@ trait Blocks
         return array_map(function ($block) {
             // 'Include' block types
             if ($block->type === 'include' && !empty($block->controller)) {
-                $block->html = ClassEvents::executeClass($block->controller, [$this->prepareTemplateBlockTypes($block)])->render();
+                $block->html = ClassEvents::executeClass($block->controller, [request(), $this->prepareTemplateBlockTypes($block)])->render();
             }
 
             // 'Template' block types

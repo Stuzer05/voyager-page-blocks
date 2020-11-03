@@ -165,7 +165,7 @@ class PageBlockController extends VoyagerBaseController
                 }
             }
         } else {
-            $block->data = [];
+            $block->data = $data;
 
             if ($block->type === 'include') {
                 $block->controller = $request->input('controller');
@@ -302,7 +302,7 @@ class PageBlockController extends VoyagerBaseController
             foreach ($shared_block->translations as &$shared_translation) {
                 $trans_data = collect($shared_translation->toArray())->except('id');
                 $trans_data['foreign_key'] = $block->getKey();
-                
+
                 $translation = Translation::create($trans_data->toArray());
                 $translation->save();
             }

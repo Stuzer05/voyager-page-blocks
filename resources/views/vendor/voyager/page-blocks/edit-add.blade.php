@@ -250,36 +250,63 @@
             })
 
             // Multilingual
-            $('.language-selector [name=i18n_selector]').on('change', function() {
-                let lang = $(this).attr('id');
-                let block = $(this).closest('.dd-item');
+            setTimeout(() => {
+                $('.language-selector [name=i18n_selector]').on('change', function() {
+                    let lang = $(this).attr('id');
+                    let block = $(this).closest('.dd-item');
 
-                block.find('[data-i18n]').each(function() {
+                    block.find('[data-i18n]').each(function() {
+                        let field = $(this).attr('name').replace('_i18n', '');
+                        let data = JSON.parse($(this).val());
+
+                        if (typeof data[lang] === 'undefined') return;
+
+                        let tinymce_el = $(this).closest('.form-group').find('textarea.richTextBox[name=' + field + ']');
+                        if (tinymce_el.length) {
+                            let tinymce_id = tinymce_el.attr('id');
+                            let editor = tinymce.get(tinymce_id);
+
+                            console.log('write: ', data, data[lang]);
+                            editor.setContent(data[lang]);
+                        } else {
+                            block.find('[name=' + field + ']').val(data[lang]);
+                        }
+                    })
+                })
+
+                $('[data-i18n]').each(function() {
                     let field = $(this).attr('name').replace('_i18n', '');
                     let data = JSON.parse($(this).val());
+                    let trans_el = $(this);
 
-                    if (typeof data[lang] === 'undefined') return;
+                    $(this).closest('.form-group').find('input,textarea').on('keyup', function() {
+                        let lang = $(this).closest('.dd-item').find('.language-selector .btn-primary.active [name=i18n_selector]').attr('id');
 
-                    // @todo other html inputs
-                    block.find('[name=' + field + ']').val(data[lang]);
+                        data[lang] = $(this).val();
+
+                        trans_el.val(JSON.stringify(data));
+                    });
+                    $(this).closest('.form-group').find('textarea.richTextBox').each(function() {
+                        let tinymce_id = $(this).attr('id');
+                        let editor = tinymce.get(tinymce_id);
+                        let field = $(this);
+
+                        editor.on('change', function() {
+                            let lang = field.closest('.dd-item').find('.language-selector .btn-primary.active [name=i18n_selector]').attr('id');
+
+                            data[lang] = editor.getContent();
+                            console.log('read: ', data, data[lang], lang);
+
+                            trans_el.val(JSON.stringify(data));
+                        })
+
+                        // @todo other html inputs
+                        // data[lang] = $(this).val();
+
+                        // trans_el.val(JSON.stringify(data));
+                    });
                 })
-            })
-
-            $('[data-i18n]').each(function() {
-                let field = $(this).attr('name').replace('_i18n', '');
-                let data = JSON.parse($(this).val());
-                let trans_el = $(this);
-
-                // @todo other html inputs
-                $(this).closest('.form-group').find('input,textarea').on('keyup', function() {
-                    let lang = $(this).closest('.dd-item').find('.language-selector [name=i18n_selector]:checked').attr('id');
-
-                    // @todo other html inputs
-                    data[lang] = $(this).val();
-
-                    trans_el.val(JSON.stringify(data));
-                });
-            })
+            }, 500);
         });
     </script>
 @endsection
