@@ -266,7 +266,7 @@
                             let tinymce_id = tinymce_el.attr('id');
                             let editor = tinymce.get(tinymce_id);
 
-                            console.log('write: ', data, data[lang]);
+                            // console.log('write: ', data, data[lang]);
                             editor.setContent(data[lang]);
                         } else {
                             block.find('[name=' + field + ']').val(data[lang]);
@@ -295,15 +295,10 @@
                             let lang = field.closest('.dd-item').find('.language-selector .btn-primary.active [name=i18n_selector]').attr('id');
 
                             data[lang] = editor.getContent();
-                            console.log('read: ', data, data[lang], lang);
+                            // console.log('read: ', data, data[lang], lang);
 
                             trans_el.val(JSON.stringify(data));
                         })
-
-                        // @todo other html inputs
-                        // data[lang] = $(this).val();
-
-                        // trans_el.val(JSON.stringify(data));
                     });
                 })
             }, 500);

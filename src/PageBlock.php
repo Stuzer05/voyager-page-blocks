@@ -99,6 +99,7 @@ class PageBlock extends Model
                 $dataRow->details = $row['details'] ?? null;
                 $dataRow->placeholder = $row['placeholder'] ?? 0;
                 $dataRow->translatable = $row['translatable'] ?? 0;
+                $dataRow->maxlength = $row['maxlength'] ?? null;
 
                 return $dataRow;
             });
