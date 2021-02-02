@@ -76,6 +76,7 @@ class PageBlockController extends VoyagerBaseController
             if (
                 $row->type === 'image'
                 || $row->type === 'multiple_images'
+                || $row->type === 'file'
             ) {
                 if (is_null($request->file($row->field))) {
                     if (isset($existingData->{$row->field})) {
@@ -105,6 +106,7 @@ class PageBlockController extends VoyagerBaseController
         }
 
         $data = $this->uploadImages($request, $data);
+
 
         $translatable_fields = $template->fields->filter(function($field) {
             return isset($field->translatable) && $field->translatable;
