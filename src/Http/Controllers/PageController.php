@@ -74,6 +74,10 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
             ];
         });
 
+        View::composer('*', function($view) use ($page) {
+            View::share('page', $page);
+        });
+
         // Override standard body content, with page block content
         $page['body'] = view('voyager-page-blocks::default', [
             'page' => $page,
