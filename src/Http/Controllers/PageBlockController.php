@@ -383,4 +383,36 @@ class PageBlockController extends VoyagerBaseController
 
         return $translations;
     }
+
+    public function deleteMultipleFile(Request $request)
+    {
+        $block = PageBlock::findOrFail($request->block_id);
+
+        if (!empty($block->data) && isset($block->data->{$request->field})) {
+            $fieldData = @json_decode($block->data->{$request->field}, true);
+
+            $fieldDataNew = [];
+            if (is_array($fieldData)) {
+                $fieldDataNew = array_filter($fieldData, fn ($v) => !str_ends_with($v, $request->file_name));
+
+                $filesToDelete = array_filter($fieldData, fn ($v) => str_ends_with($v, $request->file_name));
+                foreach ($filesToDelete as $file) {
+                    $this->deleteFileIfExists($file);
+                }
+            } else {
+                $fieldDataNew = [];
+            }
+
+            $blockData = $block->data;
+            $blockData->{$request->field} = @json_encode($fieldDataNew);
+
+            $block->data = $blockData;
+            $block->save();
+        }
+
+        return [
+            'message' => __('voyager::generic.successfully_deleted'),
+            'alert-type' => 'success',
+        ];
+    }
 }

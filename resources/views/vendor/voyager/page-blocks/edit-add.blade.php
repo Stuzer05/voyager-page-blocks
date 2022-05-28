@@ -181,17 +181,27 @@
             /**
              * MULTIPLE-IMAGES Delete function
              */
-            /*$(".remove-multi-image").on('click', function(e){
+            $(".remove-multi-file,.remove-multi-image").on('click', function(e){
                 e.preventDefault();
-                var result = confirm("Are you sure you want to delete this image?");
+                var result = confirm("Are you sure you want to delete this file?");
                 if (result) {
-                    $.post('{{-- route('voyager.page-blocks.delete-multiple-image') --}}', {
-                        field: $(this).data('id'),
-                        file_name: $(this).data('file-name'),
-                        _token: '{{ csrf_token() }}'
+                    const thisButton = $(this);
+                    const blockId = $(this).closest('.dd-item').attr('data-id');
+                    const fieldName = $(this).closest('[data-field-name]').attr('data-field-name');
+                    const fileBlock = $(this).closest('[data-field-name]').find('.fileType');
+                    const fileName = fileBlock.attr('data-file-name');
+
+                    $.post('{{ route('voyager.page-blocks.delete_multiple_file') }}', {
+                        block_id: blockId,
+                        field: fieldName,
+                        file_name: fileName,
+                        _token: '{{ csrf_token() }}',
+                    }, function(response) {
+                        thisButton.remove();
+                        fileBlock.remove();
                     });
                 }
-            });*/
+            });
 
             /**
              * Confirm DELETE block
