@@ -59,6 +59,10 @@ trait Blocks
     {
         $templateKey = $block->path;
         $templateConfig = Config::get("page-blocks.$templateKey");
+        
+        if (is_array($block->data)) {
+            $block->data = (object)$block->data;   
+        }
 
         // Ensure every key from config exists in collection
         $blockFields = $templateConfig['fields'] ?? [];
