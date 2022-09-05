@@ -21,14 +21,16 @@
                     foreach($template->fields as $row)
                         if (isset($row->translatable) && $row->translatable) $isModelTranslatable = true;
                 @endphp
-                <div class="panel-action">
-                    <style>
-                        .panel-action .language-selector {
-                            float: initial !important;
-                        }
-                    </style>
-                    @include('voyager::multilingual.language-selector')
-                </div>
+                @if (config('voyager.multilingual.enabled'))
+                    <div class="panel-action">
+                        <style>
+                            .panel-action .language-selector {
+                                float: initial !important;
+                            }
+                        </style>
+                        @include('voyager::multilingual.language-selector')
+                    </div>
+                @endif
 
                 <a class="panel-action voyager-resize-full" data-toggle="panel-fullscreen" aria-hidden="true"></a>
             </div>
