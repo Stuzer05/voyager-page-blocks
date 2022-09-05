@@ -111,7 +111,7 @@ class PageBlockController extends VoyagerBaseController
         $translatable_fields = $template->fields->filter(function($field) {
             return isset($field->translatable) && $field->translatable;
         })->pluck('field');
-        $translations = $this->prepareTranslations($translatable_fields, $request);
+        $translations = $this->prepareTranslations(config('voyager.multilingual.enabled') ? $translatable_fields : [], $request);
 
         $default_locale = config('voyager.multilingual.default', 'en');
         $locales = config('voyager.multilingual.locales', [$default_locale]);
