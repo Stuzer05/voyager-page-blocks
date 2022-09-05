@@ -62,6 +62,8 @@ trait Blocks
         
         if (is_array($block->data)) {
             $block->data = (object)$block->data;   
+        } else if (is_string($block->data)) {
+            $block->data = (object)[];   
         }
 
         // Ensure every key from config exists in collection
