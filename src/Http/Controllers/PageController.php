@@ -56,7 +56,7 @@ class PageController extends \Pvtl\VoyagerFrontend\Http\Controllers\PageControll
             return collect($routes);
         });
 
-        $page = Page::withTranslation($locale)->where(['route_name' => $route_name, 'status' => 'ACTIVE'])->firstOrFail();
+        $page = Page::whereNull('site')->withTranslation($locale)->where(['route_name' => $route_name, 'status' => 'ACTIVE'])->firstOrFail();
         $blocks = $page->blocks()->where('is_hidden', '=', '0')->orderBy('order', 'asc')->get()->map(function($block) use ($locale) {
             $data = $block->translatedData($locale);
             $template = empty($block->path) ? null : $block->template()->template;
