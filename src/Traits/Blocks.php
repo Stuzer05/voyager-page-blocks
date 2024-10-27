@@ -31,18 +31,8 @@ trait Blocks
             if ($block->type === 'template' && !empty($block->template)) {
                 $block = $this->prepareTemplateBlockTypes($block);
             }
-
-            // Add HTML to cache by key: $block->id - $block->page_id - $block->updated_at
-            $cacheKey = "blocks/$block->id-$block->page_id-$block->updated_at";
-
-            $ttl = $block->cache_ttl;
-            // When not in local dev (eg. prod), let's always cache for at least 1min
-            if (empty($ttl) && app('env') != 'local') {
-                $ttl = 1;
-            }
-            return Cache::remember($cacheKey, $ttl, function () use ($block) {
-                return $block;
-            });
+            
+            return $block;
         }, $blocks->toArray());
     }
 
